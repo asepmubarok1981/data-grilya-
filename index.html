@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>DATA REBOND - Katalog</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DATA REBOND">
+    <meta name="description" content="Katalog DATA REBOND yang dapat dipasang sebagai aplikasi di layar utama.">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FIREBASE COMPAT SDK (LANCAR DI LOCAL FILE:// DAN DEPLOY HOSTING/VERCEL) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- STYLE TAMBAHAN: STEMPEL CSS RINGAN & ANIMASI TICKER MARQUEE -->
+    <style>
+        .status-stamp-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .status-stamp-text {
+            font-size: 18px;
+            font-weight: 900;
+            color: #ef4444;
+            border: 3px solid #ef4444;
+            padding: 6px 14px;
+            transform: rotate(-12deg);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.85);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .status-stamp-text.basil {
+            color: #a855f7;
+            border-color: #a855f7;
+        }
+
+        @keyframes slowBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .animate-slow-blink {
+            animation: slowBlink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* ANIMASI TULISAN BERJALAN DARI KANAN KE KIRI (RIGHT TO LEFT) */
+        @keyframes marqueeRightToLeft {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .animate-marquee-rtl {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marqueeRightToLeft 12s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-black font-sans antialiased p-2 sm:p-4 text-gray-300">
+
+    <div class="max-w-md mx-auto relative">
+        
+        <!-- HEADER APLIKASI -->
+        <div class="bg-gray-900 p-2 sm:px-3 sm:py-2.5 rounded-lg shadow-lg mb-3 border border-gray-800 sticky top-1 z-10 transition-all duration-300">
+            
+            <div class="flex flex-col mb-1.5 gap-1.5">
+                <h2 id="appTitleHeader" class="text-lg font-black text-amber-400 tracking-tight leading-none">DATA REBOND</h2>
+
+                <!-- BADGE READY, STOCK UPDATE, UPDATE TODAY -->
+                <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <div class="bg-gray-950 border border-gray-700 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-inner">
+                        <span class="relative flex h-1.5 w-1.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                        </span>
+                        <span class="text-[8px] font-bold text-gray-300 tracking-wider">
+                            Ready: <span id="totalDataIndicator" class="text-amber-400 font-black text-[10px]">0</span> data
+                        </span>
+                    </div>
+
+                    <div class="bg-gray-950 border border-gray-700 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-inner">
+                        <span class="text-[8px] font-bold text-gray-300 tracking-wider">
+                            Stock Update: <span class="text-amber-400 font-black text-[10px]">901.254</span>
+                        </span>
+                    </div>
+
+                    <div class="bg-gray-950 border border-gray-700 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-inner">
+                        <span class="text-[8px] font-bold text-gray-300 tracking-wider">
+                            Update Today: <span id="updateTodayIndicator" class="text-amber-400 font-black text-[10px]">-</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TULISAN BERJALAN DARI KANAN KE KIRI (RUNNING TICKER RTL) -->
+            <div class="overflow-hidden whitespace-nowrap my-1.5 py-0.5 bg-gray-950/80 rounded border border-amber-500/30 flex items-center">
+                <div id="runningTickerContainer" class="animate-marquee-rtl text-[10px] font-bold text-amber-400 tracking-wide">
+                    🔥 DISKON HARI INI UNTUK ORANG GANTENG 🔥 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🔥 DISKON HARI INI UNTUK ORANG GANTENG 🔥
+                </div>
+            </div>
+
+            <!-- Baris Pencarian & Keranjang -->
+            <div id="headerDataActions" class="flex gap-1.5 items-center mb-2 transition-all duration-300">
+                <div class="relative flex-1">
+                    <input type="text" id="searchInput" placeholder="Cari Provinsi, Kab, Kec, Desa, atau *200..." class="w-full bg-gray-950 text-[11px] text-gray-200 border border-gray-700 rounded-md pl-2.5 pr-7 py-1.5 focus:outline-none focus:border-amber-500 transition shadow-inner">
+                    <svg class="w-3.5 h-3.5 absolute right-2 top-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <button id="btnHeaderCart" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-1.5 rounded-md transition-colors duration-300">
+                    <svg id="cartIconSvg" class="w-4 h-4 text-amber-400 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="cartBadge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full hidden border border-gray-900 shadow-lg">0</span>
+                </button>
+            </div>
+
+            <!-- NAVIGASI TAB -->
+            <div class="grid grid-cols-3 gap-0.5 bg-gray-950 p-0.5 rounded-md border border-gray-800 text-center">
+                <button id="btnTabData" class="bg-gray-800 text-amber-400 text-[9px] font-bold py-1 rounded shadow transition-all duration-200">Data</button>
+                <button id="btnTabLayanan" class="text-gray-500 hover:text-gray-300 text-[9px] font-bold py-1 rounded transition-all duration-200">Layanan</button>
+                <button id="btnTabApk" class="text-gray-500 hover:text-gray-300 text-[9px] font-bold py-1 rounded transition-all duration-200">APK</button>
+            </div>
+
+            <!-- NOTIFIKASI REALTIME LIVE TICKER DI BAWAH TAB DATA-LAYANAN-APK -->
+            <div id="liveAlertContainer" class="hidden mt-1.5 text-center transition-all duration-300">
+                <span id="liveAlertText" class="text-[9px] font-black text-green-400 bg-gray-950 px-2 py-0.5 rounded border border-green-500/50 shadow-inner inline-block animate-pulse"></span>
+            </div>
+
+        </div>
+
+        <!-- AREA KONTEN TAB -->
+        <div id="contentData" class="block">
+            <div id="katalogContainer" class="flex flex-col gap-2 pb-10">
+                <div class="text-center text-gray-500 text-xs py-10">Memuat data real-time dari Firebase RTDB...</div>
+            </div>
+        </div>
+
+        <div id="contentLayanan" class="hidden pb-10">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center shadow-lg mt-2">
+                <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-2 border border-gray-700">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <h3 class="text-gray-200 font-bold text-xs mb-1">Layanan Automatis</h3>
+                <p class="text-[9px] text-gray-500">Area ini disiapkan untuk fitur layanan otomatis.</p>
+            </div>
+        </div>
+
+        <div id="contentApk" class="hidden pb-10">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center shadow-lg mt-2">
+                <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-2 border border-gray-700">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                </div>
+                <h3 class="text-gray-200 font-bold text-xs mb-1">Modul APK</h3>
+                <p class="text-[9px] text-gray-500">Area ini disiapkan untuk modul APK Android Anda.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SEMUA POPUP / MODAL -->
+    <div id="modalCart" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 bg-black bg-opacity-90 backdrop-blur-sm transition-opacity">
+        <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="bg-gray-800 p-3 flex justify-between items-center border-b border-gray-700">
+                <h3 class="text-amber-400 font-black text-sm tracking-wider">KERANJANG PILIHAN</h3>
+                <button id="btnCloseCart" class="text-gray-400 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+            <div class="p-3 overflow-y-auto flex-1">
+                <ul id="cartList" class="space-y-2"></ul>
+            </div>
+            <div class="bg-gray-800 p-3 border-t border-gray-700 hidden flex gap-2" id="cartFooter">
+                <button id="btnCloseCartBottom" class="w-1/3 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2.5 rounded-lg transition text-xs uppercase">
+                    TUTUP
+                </button>
+                <button id="btnCheckoutCart" class="w-2/3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-2.5 rounded-lg shadow-md transition text-xs uppercase">
+                    HUBUNGI SELLER
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GARANSI -->
+    <div id="modalGaransi" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-3 bg-black bg-opacity-90 backdrop-blur-sm transition-opacity">
+        <div class="bg-gray-900 border border-amber-500 rounded-xl w-full max-w-xs overflow-hidden shadow-[0_0_20px_rgba(245,158,11,0.2)] text-center">
+            <div class="bg-gray-800 p-2.5 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-amber-400 font-black text-[11px] tracking-wider">INFO GARANSI</h3>
+                <button id="btnCloseGaransi" class="text-gray-400 hover:text-white font-bold text-lg leading-none">&times;</button>
+            </div>
+            <div class="p-5">
+                <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-3 border border-amber-500/50">
+                    <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <p id="garansiText" class="text-gray-100 text-xs font-bold leading-relaxed"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT UTAMA APLIKASI -->
+    <script>
+        window.dummyData = [];
+        let keranjang = [];
+        let previousKeysSet = new Set();
+        let initialDataCount = 0;
+
+        // DYNAMIC BRANDING, WA, TICKER, BG, INFO, & GARANSI DARI URL PARAMETER + LOCALSTORAGE
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let customBrandTitle = urlParams.get('brand') || localStorage.getItem('pwa_brand') || "DATA REBOND";
+        let targetWaNumber = urlParams.get('wa') || localStorage.getItem('pwa_wa') || "6285353871945";
+        let customTicker = urlParams.get('ticker') || urlParams.get('text') || localStorage.getItem('pwa_ticker') || "🔥 DISKON HARI INI UNTUK ORANG GANTENG 🔥";
+        let customBgHex = urlParams.get('bg') || localStorage.getItem('pwa_bg') || "000000";
+        let customInfoText = urlParams.get('info') || localStorage.getItem('pwa_info') || "";
+        let customGaransiText = urlParams.get('garansi') || localStorage.getItem('pwa_garansi') || "";
+
+        if (urlParams.get('brand')) localStorage.setItem('pwa_brand', customBrandTitle);
+        if (urlParams.get('wa')) localStorage.setItem('pwa_wa', targetWaNumber);
+        if (urlParams.get('ticker') || urlParams.get('text')) localStorage.setItem('pwa_ticker', customTicker);
+        if (urlParams.get('bg')) localStorage.setItem('pwa_bg', customBgHex);
+        if (urlParams.get('info')) localStorage.setItem('pwa_info', customInfoText);
+        if (urlParams.get('garansi')) localStorage.setItem('pwa_garansi', customGaransiText);
+
+        targetWaNumber = targetWaNumber.replace(/\D/g, '');
+        if (targetWaNumber.startsWith('0')) {
+            targetWaNumber = '62' + targetWaNumber.substring(1);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const titleElem = document.getElementById('appTitleHeader');
+            if (titleElem && customBrandTitle) {
+                titleElem.innerText = customBrandTitle;
+            }
+
+            const tickerElem = document.getElementById('runningTickerContainer');
+            if (tickerElem && customTicker) {
+                tickerElem.innerText = customTicker + "        " + customTicker;
+            }
+
+            if (customBgHex) {
+                const hexClean = customBgHex.replace('#', '');
+                document.body.style.backgroundColor = '#' + hexClean;
+            }
+        });
+
+        // 1. INISIALISASI FIREBASE REALTIME DATABASE COMPAT
+        const firebaseConfig = {
+            databaseURL: "https://battousai-multi-d24fb-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const rtdb = firebase.database();
+
+        function dengarDataRealtime() {
+            try {
+                const kartuJualRef = rtdb.ref('kartu_jual');
+                kartuJualRef.on('value', (snapshot) => {
+                    const dataVal = snapshot.val();
+                    let firebaseData = [];
+                    if (dataVal) {
+                        Object.keys(dataVal).forEach((key) => {
+                            const itemOrFolder = dataVal[key];
+                            if (typeof itemOrFolder === 'object' && itemOrFolder !== null) {
+                                if (itemOrFolder.kode || itemOrFolder.nama) {
+                                    firebaseData.push({ id: key, ...itemOrFolder });
+                                } else {
+                                    Object.keys(itemOrFolder).forEach((childKey) => {
+                                        const card = itemOrFolder[childKey];
+                                        if (typeof card === 'object' && card !== null) {
+                                            firebaseData.push({ id: childKey, ...card });
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+
+                    // DETEKSI KODE HILANG / SOLD SECARA REALTIME
+                    const currentKeysSet = new Set(firebaseData.map(d => d.kode || d.id));
+                    if (previousKeysSet.size > 0) {
+                        previousKeysSet.forEach(oldKode => {
+                            if (!currentKeysSet.has(oldKode)) {
+                                showLiveAlert(`Kode ${oldKode} SOLD`);
+                            }
+                        });
+                    }
+                    previousKeysSet = currentKeysSet;
+
+                    // HITUNG UPDATE TODAY JIKA DATA BERTAMBAH
+                    if (initialDataCount === 0 && firebaseData.length > 0) {
+                        initialDataCount = firebaseData.length;
+                    } else if (firebaseData.length > initialDataCount) {
+                        const addedCount = firebaseData.length - initialDataCount;
+                        const updateTodayElem = document.getElementById('updateTodayIndicator');
+                        if (updateTodayElem) updateTodayElem.innerText = `+${addedCount}`;
+                    }
+
+                    window.dummyData = firebaseData;
+
+                    const totalIndicator = document.getElementById('totalDataIndicator');
+                    if(totalIndicator) totalIndicator.innerText = window.dummyData.length;
+
+                    rerenderVisibleKatalog();
+                    updateCartUI();
+                });
+            } catch (error) {
+                console.error("Gagal memuat data realtime dari Firebase RTDB: ", error);
+            }
+        }
+
+        // MENAMPILKAN NOTIFIKASI REALTIME LIVE TICKER DI BAWAH TAB
+        let alertTimeout = null;
+        function showLiveAlert(msg) {
+            const container = document.getElementById('liveAlertContainer');
+            const textElem = document.getElementById('liveAlertText');
+            if (container && textElem) {
+                textElem.innerText = msg;
+                container.classList.remove('hidden');
+                if (alertTimeout) clearTimeout(alertTimeout);
+                alertTimeout = setTimeout(() => {
+                    container.classList.add('hidden');
+                }, 4000);
+            }
+        }
+
+        function formatRupiah(angka) {
+            if (!angka) return '0';
+            const cleanNum = Number(String(angka).replace(/[^0-9]/g, ''));
+            if (isNaN(cleanNum)) return angka;
+            return cleanNum.toLocaleString('id-ID');
+        }
+
+        const btnTabData = document.getElementById('btnTabData');
+        const btnTabLayanan = document.getElementById('btnTabLayanan');
+        const btnTabApk = document.getElementById('btnTabApk');
+        
+        const contentData = document.getElementById('contentData');
+        const contentLayanan = document.getElementById('contentLayanan');
+        const contentApk = document.getElementById('contentApk');
+        const headerDataActions = document.getElementById('headerDataActions');
+
+        function switchTab(tabName) {
+            [btnTabData, btnTabLayanan, btnTabApk].forEach(btn => {
+                btn.classList.remove('bg-gray-800', 'text-amber-400', 'shadow');
+                btn.classList.add('text-gray-500');
+            });
+            contentData.classList.add('hidden');
+            contentLayanan.classList.add('hidden');
+            contentApk.classList.add('hidden');
+            headerDataActions.classList.add('hidden');
+
+            if (tabName === 'data') {
+                btnTabData.classList.add('bg-gray-800', 'text-amber-400', 'shadow');
+                btnTabData.classList.remove('text-gray-500');
+                contentData.classList.remove('hidden');
+                headerDataActions.classList.remove('hidden'); 
+            } else if (tabName === 'layanan') {
+                btnTabLayanan.classList.add('bg-gray-800', 'text-amber-400', 'shadow');
+                btnTabLayanan.classList.remove('text-gray-500');
+                contentLayanan.classList.remove('hidden');
+            } else if (tabName === 'apk') {
+                btnTabApk.classList.add('bg-gray-800', 'text-amber-400', 'shadow');
+                btnTabApk.classList.remove('text-gray-500');
+                contentApk.classList.remove('hidden');
+            }
+        }
+
+        btnTabData.addEventListener('click', () => switchTab('data'));
+        btnTabLayanan.addEventListener('click', () => switchTab('layanan'));
+        btnTabApk.addEventListener('click', () => switchTab('apk'));
+
+        const container = document.getElementById('katalogContainer');
+        const searchInput = document.getElementById('searchInput');
+
+        function getFilteredData() {
+            const kw = searchInput.value.toLowerCase().trim();
+            if (!kw) return window.dummyData;
+
+            if (kw.startsWith('*')) {
+                const searchCode = kw.substring(1).trim();
+                if (!searchCode) return window.dummyData;
+                return window.dummyData.filter(item => {
+                    const c = String(item.kode || item.id || '').toLowerCase();
+                    return c.includes(searchCode);
+                });
+            }
+
+            return window.dummyData.filter(item => {
+                return (item.kode && String(item.kode).toLowerCase().includes(kw)) ||
+                       (item.provinsi && String(item.provinsi).toLowerCase().includes(kw)) ||
+                       (item.kabupaten && String(item.kabupaten).toLowerCase().includes(kw)) ||
+                       (item.kecamatan && String(item.kecamatan).toLowerCase().includes(kw)) ||
+                       (item.desa && String(item.desa).toLowerCase().includes(kw)) ||
+                       (item.nama && String(item.nama).toLowerCase().includes(kw)) ||
+                       (item.nik && String(item.nik).toLowerCase().includes(kw)) ||
+                       (item.pt && String(item.pt).toLowerCase().includes(kw));
+            });
+        }
+
+        function rerenderVisibleKatalog() {
+            renderKatalog(getFilteredData());
+        }
+
+        searchInput.addEventListener('input', rerenderVisibleKatalog);
+
+        function formatIuran(rawIuran) {
+            if (!rawIuran) return 'IUT -';
+            try {
+                const parsedDate = new Date(rawIuran);
+                if (!isNaN(parsedDate.getTime())) {
+                    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                    const formatted = parsedDate.toLocaleDateString('id-ID', options);
+                    return `IUT ${formatted}`;
+                }
+            } catch (e) {}
+
+            const cleanStr = String(rawIuran);
+            return `IUT ${cleanStr.split('00:00:00')[0].trim()}`;
+        }
+
+        function renderKatalog(dataArray) {
+            container.innerHTML = ""; 
+            if(!dataArray || dataArray.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 text-xs py-10">Data tidak ditemukan</div>`;
+                return;
+            }
+
+            dataArray.forEach((data) => {
+                const sudahMasukKeranjang = keranjang.some(item => (item.kode || item.id) === (data.kode || data.id));
+                const iuranBersih = formatIuran(data.iuranTerakhir || data.iuran_terakhir);
+                const kodeData = data.kode || data.id || '-';
+
+                const rawGaransiText = data.garansi || customGaransiText || "Data ini bergaransi refund 90% selama 24 jam.";
+                const garansiText = rawGaransiText.replace(/"/g, '&quot;');
+                
+                const statusData = data.status ? String(data.status).toLowerCase().trim() : '';
+                const isBasil = (statusData === 'basil');
+                const isReady = (statusData === '' || statusData === 'tersedia' || statusData === 'ready');
+
+                const saldoFormatted = formatRupiah(data.saldo);
+
+                let overlayHtml = '';
+                if (isBasil) {
+                    overlayHtml = `<div class="status-stamp-overlay"><div class="status-stamp-text basil">SUDAH BASIL</div></div>`;
+                } else if (!isReady) {
+                    overlayHtml = `<div class="status-stamp-overlay"><div class="status-stamp-text">SUDAH TERJUAL</div></div>`;
+                }
+
+                // LAYOUT MATS / SEJAJAR KODE + BADGE + SALDO PALING BAWAH
+                const card = `
+                    <div class="bg-gray-900 rounded-xl shadow-xl border border-gray-800 p-2.5 overflow-hidden relative mb-2.5">
+                        <div class="absolute left-0 top-0 bottom-0 w-[4px] ${isBasil ? 'bg-purple-500' : (!isReady ? 'bg-red-500' : 'bg-amber-400')} z-20"></div>
+                        
+                        ${overlayHtml}
+
+                        <div class="flex gap-2.5 items-stretch relative">
+                            <!-- SISI KIRI (KODE, ALAMAT VERTIKAL, IDENTITAS, IUT, DAN SALDO DI PALING BAWAH) -->
+                            <div class="flex-1 space-y-1 text-[11px] text-gray-200">
+
+                                <!-- BARIS ATAS: KODE DATA & BADGE STATUS SEJAJAR -->
+                                <div class="flex items-center justify-between gap-1 mb-1 pr-1">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-amber-400 text-xs">🔖</span>
+                                        <h3 class="text-xs font-black text-amber-400 tracking-wide">${kodeData}</h3>
+                                    </div>
+                                    <span class="text-[8px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-950 border border-gray-800 ${isBasil ? 'text-purple-400' : (!isReady ? 'text-red-400' : 'text-green-400 animate-slow-blink')}">
+                                        ${isBasil ? 'BASIL' : (!isReady ? 'TERJUAL' : 'DATA READY')}
+                                    </span>
+                                </div>
+
+                                <!-- LOKASI ALAMAT VERTIKAL -->
+                                ${data.provinsi ? `<div class="text-[10px] font-bold text-gray-200 uppercase leading-tight">🗺️ ${data.provinsi}</div>` : ''}
+                                ${data.kabupaten ? `<div class="text-[10px] font-semibold text-gray-300 uppercase leading-tight">📍 ${data.kabupaten}</div>` : ''}
+                                ${data.kecamatan ? `<div class="text-[10px] text-gray-300 uppercase leading-tight">🏡 ${data.kecamatan}</div>` : ''}
+                                ${data.desa ? `<div class="text-[10px] text-gray-400 uppercase leading-tight">🏠 ${data.desa}</div>` : ''}
+
+                                <!-- KELAMIN, NIK, TAHUN LAHIR -->
+                                <div class="pt-1 border-t border-gray-800/80 flex flex-wrap gap-x-2 text-[10px]">
+                                    ${data.kelamin ? `<span class="text-gray-300 font-semibold">⚥ ${data.kelamin}</span>` : ''}
+                                    ${data.nik ? `<span class="font-mono text-gray-200 font-bold">🆔 ${data.nik}</span>` : ''}
+                                    ${data.tglLahir ? `<span class="font-mono text-gray-300">📅 ${data.tglLahir}</span>` : ''}
+                                </div>
+
+                                <!-- IUT, JUMLAH KARTU, STATUS AKUN -->
+                                <div class="pt-1 border-t border-gray-800/80 flex flex-wrap gap-x-2 text-[10px]">
+                                    <span class="font-bold text-gray-200">📅 ${iuranBersih}</span>
+                                    ${data.jumlahKartu ? `<span class="font-semibold text-gray-300">📊 ${String(data.jumlahKartu).toLowerCase().includes('jumlah') ? data.jumlahKartu : 'Jumlah Kartu ' + data.jumlahKartu}</span>` : ''}
+                                    ${data.statusAkun ? `<span class="font-bold text-green-400">✅ ${data.statusAkun}</span>` : ''}
+                                </div>
+
+                                <!-- SALDO DI PALING BAWAH KARTU -->
+                                <div class="pt-1 border-t border-gray-800/80 flex items-center gap-1.5 text-[11px]">
+                                    <span class="text-xs">💰</span>
+                                    <span class="text-amber-400 font-black text-xs">Rp ${saldoFormatted}</span>
+                                </div>
+
+                            </div>
+
+                            <!-- SISI KANAN (4 TOMBOL AKSI SEJAJAR KOTAK EQUAL HEIGHT) -->
+                            <div class="w-[95px] flex flex-col justify-between gap-1.5 shrink-0">
+
+                                <!-- 1. TOMBOL KERANJANG -->
+                                <button class="btn-add-cart w-full h-[28px] ${sudahMasukKeranjang ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-amber-500 hover:bg-amber-400 text-black'} font-black text-[9px] rounded-md shadow transition flex items-center justify-center gap-1" data-kode="${kodeData}">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    <span>${sudahMasukKeranjang ? 'BATAL' : '+ KERANJANG'}</span>
+                                </button>
+
+                                <!-- 2. TOMBOL INFO DATA -->
+                                <button class="btn-info-data w-full h-[28px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-amber-400 font-bold text-[9px] rounded-md transition flex items-center justify-center leading-none" data-kode="${kodeData}" data-nama="${data.nama || '-'}" data-status="${statusData || 'ready'}">
+                                    <span>INFO DATA</span>
+                                </button>
+
+                                <!-- 3. TOMBOL GARANSI -->
+                                <button class="btn-garansi w-full h-[28px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-amber-400 font-bold text-[9px] rounded-md transition flex items-center justify-center leading-none" data-garansi="${garansiText}">
+                                    <span>GARANSI</span>
+                                </button>
+
+                                <!-- 4. TOMBOL HUBUNGI SELLER (LANGSUNG CHAT WA "CEK <KODE>") -->
+                                <button class="btn-hub-seller w-full h-[28px] bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-[8px] rounded-md transition flex items-center justify-center leading-tight" data-kode="${kodeData}">
+                                    <span>HUBUNGI SELLER</span>
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        const btnHeaderCart = document.getElementById('btnHeaderCart');
+        const cartIconSvg = document.getElementById('cartIconSvg');
+        const cartBadge = document.getElementById('cartBadge');
+        
+        function updateCartUI() {
+            cartBadge.textContent = keranjang.length;
+            if (keranjang.length > 0) {
+                cartBadge.classList.remove('hidden');
+                btnHeaderCart.classList.remove('bg-gray-800', 'hover:bg-gray-700');
+                btnHeaderCart.classList.add('bg-red-600', 'hover:bg-red-500');
+                cartIconSvg.classList.remove('text-amber-400');
+                cartIconSvg.classList.add('text-white');
+            } else {
+                cartBadge.classList.add('hidden');
+                btnHeaderCart.classList.add('bg-gray-800', 'hover:bg-gray-700');
+                btnHeaderCart.classList.remove('bg-red-600', 'hover:bg-red-500');
+                cartIconSvg.classList.add('text-amber-400');
+                cartIconSvg.classList.remove('text-white');
+            }
+        }
+
+        const cartList = document.getElementById('cartList');
+        const cartFooter = document.getElementById('cartFooter');
+
+        container.addEventListener('click', (e) => {
+            const btnCart = e.target.closest('.btn-add-cart');
+            if (btnCart) {
+                const kodeDipilih = btnCart.getAttribute('data-kode');
+                const sudahAda = keranjang.find(item => (item.kode || item.id) === kodeDipilih);
+                if (!sudahAda) {
+                    const dataStok = window.dummyData.find(item => (item.kode || item.id) === kodeDipilih);
+                    if(dataStok) {
+                        keranjang.push(dataStok);
+                        updateCartUI();
+                        rerenderVisibleKatalog();
+                    }
+                } else {
+                    const idx = keranjang.findIndex(item => (item.kode || item.id) === kodeDipilih);
+                    if (idx !== -1) {
+                        keranjang.splice(idx, 1);
+                        updateCartUI();
+                        rerenderVisibleKatalog();
+                    }
+                }
+            }
+        });
+
+        // POPUP MEMBACA INFO DATA KUSTOM SELLER
+        container.addEventListener('click', (e) => {
+            const btnInfo = e.target.closest('.btn-info-data');
+            if (btnInfo) {
+                const k = btnInfo.getAttribute('data-kode');
+                const n = btnInfo.getAttribute('data-nama');
+                const infoMsg = customInfoText.trim() !== ""
+                    ? customInfoText
+                    : `Info Data Kode ${k}.\n\nNama: ${n}\nData aman & siap transaksi.`;
+                alert(infoMsg);
+            }
+        });
+
+        // MODAL KERANJANG PILIHAN
+        document.getElementById('btnHeaderCart').addEventListener('click', () => {
+            cartList.innerHTML = "";
+            if (keranjang.length === 0) {
+                cartList.innerHTML = `<p class="text-gray-500 text-center text-xs mt-4">Keranjang masih kosong.</p>`;
+                cartFooter.classList.add('hidden');
+            } else {
+                cartFooter.classList.remove('hidden');
+                keranjang.forEach((item, index) => {
+                    const itemKode = item.kode || item.id;
+                    const itemPt = item.pt || item.namaPt || item.perusahaan || '-';
+                    const itemSaldoFmt = formatRupiah(item.saldo);
+
+                    // Cek jika item sudah terjual / hilang dari RTDB
+                    const masihAdaDiRTDB = window.dummyData.some(d => (d.kode || d.id) === itemKode);
+                    const isSoldInCart = !masihAdaDiRTDB;
+
+                    cartList.innerHTML += `
+                        <li class="bg-gray-800 border ${isSoldInCart ? 'border-red-600/80 bg-red-950/30' : 'border-gray-700'} p-2 rounded-lg flex justify-between items-center">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <p class="text-[11px] font-bold text-amber-400">${itemKode}</p>
+                                    ${isSoldInCart ? `<span class="bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Sold</span>` : ''}
+                                </div>
+                                <p class="text-[9px] text-gray-400 mt-0.5">${itemPt}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-black text-white">Rp ${itemSaldoFmt}</p>
+                                <button onclick="hapusDariKeranjang(${index})" class="text-red-500 text-[9px] font-bold mt-1">Hapus</button>
+                            </div>
+                        </li>`;
+                });
+            }
+            document.getElementById('modalCart').classList.remove('hidden');
+        });
+
+        window.hapusDariKeranjang = function(index) {
+            keranjang.splice(index, 1);
+            updateCartUI();
+            rerenderVisibleKatalog();
+            document.getElementById('btnHeaderCart').click(); 
+        };
+
+        document.getElementById('btnCloseCart').addEventListener('click', () => document.getElementById('modalCart').classList.add('hidden'));
+        document.getElementById('btnCloseCartBottom').addEventListener('click', () => document.getElementById('modalCart').classList.add('hidden'));
+
+        container.addEventListener('click', (e) => {
+            const btnGaransi = e.target.closest('.btn-garansi');
+            if (btnGaransi) {
+                document.getElementById('garansiText').innerText = btnGaransi.getAttribute('data-garansi');
+                document.getElementById('modalGaransi').classList.remove('hidden');
+            }
+        });
+        document.getElementById('btnCloseGaransi').addEventListener('click', () => document.getElementById('modalGaransi').classList.add('hidden'));
+
+        // LANGSUNG HUBUNGI SELLER VIA WHATSAPP CHAT (UNTUK KARTU TUNGGAL)
+        container.addEventListener('click', (e) => {
+            const btnHub = e.target.closest('.btn-hub-seller');
+            if (btnHub) {
+                const kodeCard = btnHub.getAttribute('data-kode');
+                const textMessage = `Halo admin, tolong CEK ${kodeCard}`;
+                const waUrl = `https://wa.me/${targetWaNumber}?text=${encodeURIComponent(textMessage)}`;
+                window.open(waUrl, '_blank');
+            }
+        });
+
+        // LANGSUNG HUBUNGI SELLER VIA WHATSAPP CHAT (DARI KERANJANG BORONGAN)
+        document.getElementById('btnCheckoutCart').addEventListener('click', () => {
+            if (keranjang.length === 0) return;
+            const daftarKode = keranjang.map(item => "CEK " + (item.kode || item.id)).join("\n");
+            const textMessage = `Halo admin, tolong CEK stok data:\n${daftarKode}`;
+            const waUrl = `https://wa.me/${targetWaNumber}?text=${encodeURIComponent(textMessage)}`;
+            document.getElementById('modalCart').classList.add('hidden');
+            window.open(waUrl, '_blank');
+        });
+
+        // MULAI LISTEN RTDB REALTIME
+        dengarDataRealtime();
+    </script>
+</body>
+</html>

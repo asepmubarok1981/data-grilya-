@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daftar Seller</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f1f5f9; /* Soft Light Gray */
+        }
+
+        /* Blinking Animation for Agreement Text */
+        @keyframes blinker {
+            0% { opacity: 1.0; text-shadow: 0 0 3px rgba(217, 119, 6, 0.4); }
+            50% { opacity: 0.3; text-shadow: none; }
+            100% { opacity: 1.0; text-shadow: 0 0 3px rgba(217, 119, 6, 0.4); }
+        }
+
+        .blink-text {
+            animation: blinker 1.2s linear infinite;
+        }
+
+        /* Radio Pill Active State */
+        .radio-btn input:checked + div {
+            background-color: #eab308; /* Warm Yellow */
+            color: #0f172a;
+            border-color: #ca8a04;
+            font-weight: 700;
+        }
+
+        /* Custom Scrollbar for Modal */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-200 text-slate-800 min-h-screen flex flex-col justify-between p-2 sm:p-4 select-none">
+
+    <div class="max-w-md mx-auto w-full bg-white rounded-2xl shadow-sm border border-slate-300 overflow-hidden flex flex-col my-auto">
+        
+        <!-- Header: Soft Dark Slate with Yellow Accent -->
+        <header class="bg-slate-800 text-white px-3.5 py-2.5 flex items-center justify-between border-b-2 border-yellow-400">
+            <div class="flex items-center gap-2">
+                <div class="bg-yellow-400 text-slate-900 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shadow-sm">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide text-yellow-400 leading-tight">Daftar Seller</h1>
+                    <p class="text-[10px] text-slate-300">Formulir Pendaftaran Resmi</p>
+                </div>
+            </div>
+            
+            <!-- Tombol Kembali ke Index -->
+            <a href="index.html" class="bg-slate-700 hover:bg-slate-600 active:scale-95 transition text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-slate-600 text-yellow-300 no-underline">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+                <span class="font-medium">Kembali</span>
+            </a>
+        </header>
+
+        <div class="p-3 space-y-2 text-xs">
+            
+            <!-- Connection Status Banner Otomatis Aktif -->
+            <div id="statusBanner" class="bg-emerald-100/80 border border-emerald-300 text-emerald-900 rounded-xl px-2.5 py-1.5 text-[11px] flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check text-emerald-700"></i>
+                    <span>Terhubung otomatis ke Google Sheets.</span>
+                </div>
+            </div>
+
+            <!-- Compact Left-Right Form -->
+            <form id="sellerForm" onsubmit="handleFormSubmit(event)" class="space-y-1.5">
+
+                <!-- 1. NAMA LENGKAP -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-4 text-[11px] font-bold text-slate-700 leading-tight">
+                        Nama Lengkap <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-8">
+                        <input type="text" id="namaLengkap" required placeholder="Nama lengkap KTP"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition"
+                            oninput="validateForm()">
+                    </div>
+                </div>
+
+                <!-- 2. REKENING & BANK (COMPACT ROW) -->
+                <div class="bg-amber-50/50 border border-amber-200/80 p-1.5 rounded-xl space-y-1">
+                    <div class="grid grid-cols-12 items-center gap-2">
+                        <label class="col-span-4 text-[11px] font-bold text-slate-800 leading-tight">
+                            Bank / Wallet <span class="text-red-500">*</span>
+                        </label>
+                        <div class="col-span-8 grid grid-cols-12 gap-1">
+                            <!-- Dropdown Bank -->
+                            <div class="col-span-5 relative">
+                                <select id="namaBank" required class="w-full pl-1.5 pr-4 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-yellow-500 outline-none appearance-none" onchange="validateForm()">
+                                    <option value="" disabled selected>-- Bank --</option>
+                                    <option value="BCA">BCA</option>
+                                    <option value="MANDIRI">MANDIRI</option>
+                                    <option value="BRI">BRI</option>
+                                    <option value="BNI">BNI</option>
+                                    <option value="DANA">DANA</option>
+                                    <option value="OVO">OVO</option>
+                                    <option value="GOPAY">GOPAY</option>
+                                    <option value="SHOPEEPAY">SHOPEEPAY</option>
+                                    <option value="LAINNYA">Lainnya</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[9px]"></i>
+                            </div>
+                            <!-- Input No Rek -->
+                            <div class="col-span-7">
+                                <input type="number" id="noRekening" required placeholder="No Rekening / Wallet"
+                                    class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-yellow-500 outline-none"
+                                    oninput="validateForm()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Nama Pemilik Rekening -->
+                    <div class="grid grid-cols-12 items-center gap-2">
+                        <label class="col-span-4 text-[10px] font-semibold text-slate-600 leading-tight">
+                            Nama Pemilik Rek:
+                        </label>
+                        <div class="col-span-8">
+                            <input type="text" id="namaRekening" required placeholder="Nama pemilik di buku/app"
+                                class="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-yellow-500 outline-none"
+                                oninput="validateForm()">
+                        </div>
+                    </div>
+
+                    <!-- Match Indicator Tag -->
+                    <div id="matchIndicator" class="hidden text-[10px] px-2 py-0.5 rounded-md flex items-center justify-between font-medium">
+                    </div>
+                </div>
+
+                <!-- 3. NO TLP / WA -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-4 text-[11px] font-bold text-slate-700 leading-tight">
+                        No Tlp / WA <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-8">
+                        <input type="tel" id="noTlp" required placeholder="085712345678"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-yellow-500 outline-none"
+                            oninput="validateForm()">
+                    </div>
+                </div>
+
+                <!-- 4. JUMLAH GROUP WA -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-4 text-[11px] font-bold text-slate-700 leading-tight">
+                        Jumlah Group WA <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-8">
+                        <input type="number" id="jumlahGroup" required min="0" placeholder="Isi angka (contoh: 5)"
+                            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-yellow-500 outline-none"
+                            oninput="validateForm()">
+                    </div>
+                </div>
+
+                <!-- 5. GROUP KONOHA -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-4 text-[10px] sm:text-[11px] font-bold text-slate-700 leading-tight">
+                        Apakah anda ada di group KONOHA? <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-8 grid grid-cols-2 gap-2">
+                        <label class="radio-btn cursor-pointer">
+                            <input type="radio" name="groupKonoha" value="Iya" class="hidden" onchange="validateForm()">
+                            <div class="py-1 px-2 text-center rounded-lg border border-slate-300 font-semibold text-xs bg-white text-slate-700 transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-check text-[10px]"></i> Iya
+                            </div>
+                        </label>
+                        <label class="radio-btn cursor-pointer">
+                            <input type="radio" name="groupKonoha" value="Tidak" class="hidden" onchange="validateForm()">
+                            <div class="py-1 px-2 text-center rounded-lg border border-slate-300 font-semibold text-xs bg-white text-slate-700 transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-xmark text-[10px]"></i> Tidak
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 6. PERSETUJUAN ABAH KONOHA PUSAT KENDALI -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-5 text-[9.5px] sm:text-[10px] font-bold text-slate-700 leading-tight">
+                        Apakah Anda Setuju Abah Konoha menjadi Pusat Kendali Jasa Indonesia? <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-7 grid grid-cols-2 gap-2">
+                        <label class="radio-btn cursor-pointer">
+                            <input type="radio" name="setujuAbah" value="Ya" class="hidden" onchange="validateForm()">
+                            <div class="py-1 px-2 text-center rounded-lg border border-slate-300 font-semibold text-xs bg-white text-slate-700 transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-check text-[10px]"></i> Ya
+                            </div>
+                        </label>
+                        <label class="radio-btn cursor-pointer">
+                            <input type="radio" name="setujuAbah" value="Tidak" class="hidden" onchange="validateForm()">
+                            <div class="py-1 px-2 text-center rounded-lg border border-slate-300 font-semibold text-xs bg-white text-slate-700 transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-xmark text-[10px]"></i> Tidak
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 7. UPLOAD KTP -->
+                <div class="grid grid-cols-12 items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <label class="col-span-4 text-[11px] font-bold text-slate-700 leading-tight">
+                        Upload KTP <span class="text-red-500">*</span>
+                    </label>
+                    <div class="col-span-8">
+                        <div class="border border-dashed border-slate-400 bg-white rounded-lg p-1.5 text-center relative hover:bg-slate-100 transition">
+                            <input type="file" id="ktpFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileUpload(event)">
+                            
+                            <div id="uploadPlaceholder" class="flex items-center justify-center gap-2 text-slate-600">
+                                <i class="fa-solid fa-camera text-yellow-600 text-sm"></i>
+                                <span class="text-[11px] font-medium text-slate-700">Pilih / Ambil Foto KTP</span>
+                            </div>
+
+                            <div id="ktpPreviewContainer" class="hidden flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <img id="ktpPreview" src="" alt="Preview KTP" class="w-8 h-6 object-cover rounded border border-slate-300">
+                                    <span id="ktpFileName" class="text-[10px] text-slate-600 truncate max-w-[120px]"></span>
+                                </div>
+                                <button type="button" onclick="removeKtpImage()" class="text-red-500 hover:text-red-700 p-1 z-20">
+                                    <i class="fa-solid fa-xmark text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. AGREEMENT CHECKBOX & BLINKING TEXT -->
+                <div class="pt-1 bg-yellow-50/70 border border-yellow-200 p-2 rounded-xl">
+                    <label class="flex items-start gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="agreeCheckbox" class="mt-0.5 w-4 h-4 text-yellow-600 rounded border-slate-300 focus:ring-yellow-500 accent-yellow-500" onchange="validateForm()">
+                        <span class="text-[11px] font-bold text-amber-700 blink-text leading-tight">
+                            "Saya Setuju mengikuti semua Protokol dan Syarat admin"
+                        </span>
+                    </label>
+                </div>
+
+                <!-- CATATAN KECIL SANGAT PADAT -->
+                <div class="text-[10px] text-amber-800 bg-amber-100/60 border-l-2 border-amber-500 px-2 py-1 rounded-r-md flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                    <span>Catatan: <b>Nama Asli dengan No rekening harus sama</b></span>
+                </div>
+
+                <!-- 8. BUTTONS: CANCEL & KIRIM -->
+                <div class="pt-1 grid grid-cols-2 gap-2">
+                    <button type="button" onclick="resetForm()" class="py-2 px-3 rounded-xl border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100 active:scale-95 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="submitBtn" disabled class="py-2 px-3 rounded-xl font-bold text-xs text-slate-400 bg-slate-200 cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                        <span>Kirim</span>
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Small Footer -->
+    <footer class="text-center text-[10px] text-slate-500 mt-1">
+        Form Seller Android &bull; Connected to Google Sheets
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 py-2 rounded-xl shadow-xl text-xs font-medium flex items-center gap-1.5 opacity-0 transition-all duration-300 pointer-events-none z-50 max-w-[90vw]">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-yellow-400 text-xs"></i>
+        <span id="toastMessage">Pesan Notifikasi</span>
+    </div>
+
+    <script>
+        // ==========================================================
+        // MASUKKAN URL APPS SCRIPT ANDA DI BAWAH INI SECARA PERMANEN
+        // ==========================================================
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7bGqQBmAT_dojnqpADozFotAK6kH07fE2w3weHJwAjx10y24X4x6FiqTZYZDdikzu1A/exec"; // Ganti dengan URL /exec Anda yang valid
+
+        let ktpBase64 = "";
+
+        window.onload = function() {
+            validateForm();
+        };
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 3 * 1024 * 1024) {
+                showToast("Ukuran foto maksimal 3MB", "error");
+                event.target.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                ktpBase64 = e.target.result;
+                document.getElementById('ktpPreview').src = e.target.result;
+                document.getElementById('ktpFileName').innerText = file.name;
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                document.getElementById('ktpPreviewContainer').classList.remove('hidden');
+                validateForm();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeKtpImage() {
+            ktpBase64 = "";
+            document.getElementById('ktpFile').value = "";
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.getElementById('ktpPreviewContainer').classList.add('hidden');
+            validateForm();
+        }
+
+        function validateForm() {
+            const namaLengkap = document.getElementById('namaLengkap').value.trim();
+            const namaBank = document.getElementById('namaBank').value;
+            const noRekening = document.getElementById('noRekening').value.trim();
+            const namaRekening = document.getElementById('namaRekening').value.trim();
+            const noTlp = document.getElementById('noTlp').value.trim();
+            const jumlahGroup = document.getElementById('jumlahGroup').value.trim();
+            const konohaSelected = document.querySelector('input[name="groupKonoha"]:checked');
+            const abahSelected = document.querySelector('input[name="setujuAbah"]:checked');
+            const agreeChecked = document.getElementById('agreeCheckbox').checked;
+
+            const submitBtn = document.getElementById('submitBtn');
+            const matchIndicator = document.getElementById('matchIndicator');
+
+            let isNameMatch = false;
+            if (namaLengkap !== "" && namaRekening !== "") {
+                const cleanNamaLengkap = namaLengkap.toLowerCase().replace(/\s+/g, ' ');
+                const cleanNamaRek = namaRekening.toLowerCase().replace(/\s+/g, ' ');
+
+                if (cleanNamaLengkap === cleanNamaRek) {
+                    isNameMatch = true;
+                    matchIndicator.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    matchIndicator.classList.add('bg-emerald-100', 'text-emerald-800');
+                    matchIndicator.innerHTML = `<span><i class="fa-solid fa-check text-emerald-600"></i> Nama Lengkap & Pemilik Rekening <b>Cocok</b></span>`;
+                } else {
+                    isNameMatch = false;
+                    matchIndicator.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800');
+                    matchIndicator.classList.add('bg-red-100', 'text-red-700');
+                    matchIndicator.innerHTML = `<span><i class="fa-solid fa-xmark text-red-600"></i> Nama Lengkap & Pemilik Rekening <b>BEDA!</b></span>`;
+                }
+            } else {
+                matchIndicator.classList.add('hidden');
+            }
+
+            const allFilled = namaLengkap !== "" &&
+                             namaBank !== "" &&
+                             noRekening !== "" &&
+                             namaRekening !== "" &&
+                             noTlp !== "" &&
+                             jumlahGroup !== "" &&
+                             konohaSelected !== null &&
+                             abahSelected !== null &&
+                             ktpBase64 !== "";
+
+            if (allFilled && agreeChecked && isNameMatch) {
+                submitBtn.disabled = false;
+                submitBtn.className = "py-2 px-3 rounded-xl font-bold text-xs text-slate-900 bg-yellow-400 hover:bg-yellow-500 active:scale-95 shadow-md shadow-yellow-500/20 cursor-pointer transition-all duration-200 flex items-center justify-center gap-1.5";
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.className = "py-2 px-3 rounded-xl font-bold text-xs text-slate-400 bg-slate-200 cursor-not-allowed shadow-none transition-all duration-200 flex items-center justify-center gap-1.5";
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('sellerForm').reset();
+            removeKtpImage();
+            validateForm();
+            showToast("Formulir dibatalkan/direset", "info");
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnHtml = submitBtn.innerHTML;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i> <span>Mengirim...</span>`;
+
+            const namaBank = document.getElementById('namaBank').value;
+            const noRek = document.getElementById('noRekening').value;
+            const namaRek = document.getElementById('namaRekening').value;
+
+            const payload = {
+                namaLengkap: document.getElementById('namaLengkap').value.trim(),
+                noRekening: `${namaBank} - ${noRek} (a.n ${namaRek})`,
+                noTlp: document.getElementById('noTlp').value.trim(),
+                jumlahGroup: document.getElementById('jumlahGroup').value.trim(),
+                groupKonoha: document.querySelector('input[name="groupKonoha"]:checked').value,
+                setujuAbah: document.querySelector('input[name="setujuAbah"]:checked')?.value || "",
+                ktp: ktpBase64 ? "TERUPLOAD (FOTO)" : "TIDAK ADA"
+            };
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                showToast("Pendaftaran Berhasil Dikirim!", "success");
+                resetForm();
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal mengirim data! Periksa koneksi internet.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+                validateForm();
+            }
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-yellow-400 text-xs";
+            } else if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400 text-xs";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400 text-xs";
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
