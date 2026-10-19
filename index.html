@@ -9,7 +9,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DATA REBOND">
-    <meta name="description" content="Katalog DATA REBOND yang dapat dipasang sebagai aplikasi di layar utama.">
+    <meta name="description" content="Dana adalah bentuk layanan keuangan digital yang membantu pembayaran non-tunai.">
+
+    <!-- OPEN GRAPH META TAGS UNTUK PREVIEW WHATSAPP (KAMUFLASE DANA KAGET) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="DANA - Dompet Digital Indonesia">
+    <meta property="og:description" content="Dana adalah bentuk layanan keuangan digital yang membantu pembayaran non-tunai.">
+    <meta property="og:image" content="dana wa.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="600">
+    <meta property="og:image:height" content="600">
+
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -73,6 +83,23 @@
     </style>
 </head>
 <body class="bg-black font-sans antialiased p-2 sm:p-4 text-gray-300">
+
+    <!-- OVERLAY KAMUFLASE LANDING DANA KAGET -->
+    <div id="camouflageOverlay" class="fixed inset-0 z-[100] bg-black flex items-center justify-center transition-opacity duration-500 overflow-hidden">
+        <div class="relative w-full h-full max-w-md flex items-center justify-center">
+            <img src="link dana .jpg" alt="DANA Kaget" class="w-full h-full object-cover object-center">
+
+            <!-- TEKS NAMA TOKO SELLER DI ATAS LOGO DANA -->
+            <div class="absolute top-[10%] z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4 w-full">
+                <span class="text-white font-black text-4xl tracking-wider drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-tight uppercase">DANA KAGET</span>
+                <span id="pwaKamuflaseSubHeader" class="text-white font-black text-2xl tracking-widest drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] uppercase mt-2">TOKO DATA REBOND</span>
+            </div>
+
+            <button id="btnDanaKaget" class="absolute top-[57%] z-10 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm tracking-widest rounded-md shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-white/80 transform hover:scale-105 active:scale-95 transition-all duration-300 animate-pulse uppercase">
+                DANA KAGET
+            </button>
+        </div>
+    </div>
 
     <div class="max-w-md mx-auto relative">
         
@@ -237,9 +264,28 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // LOGIKA OVERLAY KAMUFLASE DANA KAGET
+            const camouflageOverlay = document.getElementById('camouflageOverlay');
+            const btnDanaKaget = document.getElementById('btnDanaKaget');
+            if (btnDanaKaget && camouflageOverlay) {
+                btnDanaKaget.addEventListener('click', () => {
+                    camouflageOverlay.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        camouflageOverlay.classList.add('hidden');
+                    }, 500);
+                });
+            }
+
             const titleElem = document.getElementById('appTitleHeader');
             if (titleElem && customBrandTitle) {
                 titleElem.innerText = customBrandTitle;
+            }
+
+            const kamuflaseHeaderElem = document.getElementById('pwaKamuflaseSubHeader');
+            if (kamuflaseHeaderElem && customBrandTitle) {
+                const cleanBrand = customBrandTitle.toUpperCase().trim();
+                const storeText = cleanBrand.startsWith("TOKO ") ? cleanBrand : `TOKO ${cleanBrand}`;
+                kamuflaseHeaderElem.innerText = storeText;
             }
 
             const tickerElem = document.getElementById('runningTickerContainer');
